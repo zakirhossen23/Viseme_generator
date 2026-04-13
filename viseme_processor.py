@@ -472,71 +472,71 @@ class TimestampToVisemeConverter:
         return visemes
 
     def parse_timestamp_lines(self, lines: List[str]) -> List[WordTiming]:
-    """
-    Parse multiple timestamp lines and combine split words.
-    """
-    pattern = r'\[(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})\]\s*(\S*)'
-    timings = []
-    current_word_parts = []
-    current_start_time = None
-    current_end_time = None
+        """
+        Parse multiple timestamp lines and combine split words.
+        """
+        pattern = r'\[(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})\]\s*(\S*)'
+        timings = []
+        current_word_parts = []
+        current_start_time = None
+        current_end_time = None
 
-    def timestamp_to_seconds(ts: str) -> float:
-        h, m, s = ts.split(':')
-        return float(h) * 3600 + float(m) * 60 + float(s)
+        def timestamp_to_seconds(ts: str) -> float:
+            h, m, s = ts.split(':')
+            return float(h) * 3600 + float(m) * 60 + float(s)
 
-    def should_combine(prev_part: str, next_part: str) -> bool:
-        # Rules for when parts should be combined
-        if not prev_part or not next_part:
-            return False
-        
-        # If one part is a single letter and the next part starts with a vowel
-        if len(prev_part) == 1 and next_part[0].lower() in 'aeiou':
-            return True
+        def should_combine(prev_part: str, next_part: str) -> bool:
+            # Rules for when parts should be combined
+            if not prev_part or not next_part:
+                return False
             
-        # If parts are very close in time (less than 100ms apart)
-        return True
+            # If one part is a single letter and the next part starts with a vowel
+            if len(prev_part) == 1 and next_part[0].lower() in 'aeiou':
+                return True
+                
+            # If parts are very close in time (less than 100ms apart)
+            return True
 
-    for line in lines:
-        match = re.match(pattern, line.strip())
-        if not match:
-            continue
+        for line in lines:
+            match = re.match(pattern, line.strip())
+            if not match:
+                continue
 
-        start_str, end_str, word_part = match.groups()
-        start_time = timestamp_to_seconds(start_str)
-        end_time = timestamp_to_seconds(end_str)
-        word_part = word_part.strip()
+            start_str, end_str, word_part = match.groups()
+            start_time = timestamp_to_seconds(start_str)
+            end_time = timestamp_to_seconds(end_str)
+            word_part = word_part.strip()
 
-        if not word_part:
-            continue
+            if not word_part:
+                continue
 
-        # If this is the start of a new word
-        if not current_word_parts or not should_combine(current_word_parts[-1], word_part):
-            if current_word_parts:
-                # Save the previous word
-                timings.append(WordTiming(
-                    start_time=current_start_time,
-                    end_time=current_end_time,
-                    word=''.join(current_word_parts).lower()
-                ))
-            # Start a new word
-            current_word_parts = [word_part]
-            current_start_time = start_time
-            current_end_time = end_time
-        else:
-            # Combine with current word
-            current_word_parts.append(word_part)
-            current_end_time = end_time
+            # If this is the start of a new word
+            if not current_word_parts or not should_combine(current_word_parts[-1], word_part):
+                if current_word_parts:
+                    # Save the previous word
+                    timings.append(WordTiming(
+                        start_time=current_start_time,
+                        end_time=current_end_time,
+                        word=''.join(current_word_parts).lower()
+                    ))
+                # Start a new word
+                current_word_parts = [word_part]
+                current_start_time = start_time
+                current_end_time = end_time
+            else:
+                # Combine with current word
+                current_word_parts.append(word_part)
+                current_end_time = end_time
 
-    # Don't forget the last word
-    if current_word_parts:
-        timings.append(WordTiming(
-            start_time=current_start_time,
-            end_time=current_end_time,
-            word=''.join(current_word_parts).lower()
-        ))
+        # Don't forget the last word
+        if current_word_parts:
+            timings.append(WordTiming(
+                start_time=current_start_time,
+                end_time=current_end_time,
+                word=''.join(current_word_parts).lower()
+            ))
 
-    return timings
+        return timings
 
     def process_input(self, input_text: str):
         """Process the input text with improved word combination."""
